@@ -121,3 +121,67 @@ copytag source.jpg folder --overwrite
 ```
 
 By default, source tags are **merged** into targets — duplicates are avoided. Use `--overwrite` to replace all tags on targets with only the source's tags.
+
+### Saving Tags (Backup)
+
+Exports tags from images to a JSON backup file. Useful for recovery or batch editing tags externally.
+
+```bash
+# Save all tags from current directory to tags_backup.json
+python savetags.py
+
+# Save tags from a specific folder
+python savetags.py path/to/images
+
+# Save tags from specific files
+python savetags.py img1.jpg img2.png
+
+# Save to a custom backup path
+python savetags.py --backup mybackup.json
+
+# Append to an existing backup file (merge, no duplicates)
+python savetags.py --backup mybackup.json --append
+
+# Exclude files matching glob patterns
+python savetags.py path/to/images --exclude "*thumb*,*small*"
+
+# Recursively scan subdirectories
+python savetags.py folder -r
+
+# Via PATH
+savetags
+savetags path/to/images --backup mybackup.json
+```
+
+By default, the backup file is **overwritten**. Use `--append` / `-a` to merge with an existing backup.
+
+### Restoring Tags
+
+Reads a JSON backup and writes tags back to matching images. Matches files by relative path first, then falls back to filename.
+
+```bash
+# Restore tags from default tags_backup.json to all images in current directory
+python restoretags.py
+
+# Restore from a specific backup file
+python restoretags.py --backup mybackup.json
+
+# Restore to a specific folder or files
+python restoretags.py path/to/images
+python restoretags.py img1.jpg img2.png
+
+# Append backup tags to existing tags (never duplicates)
+python restoretags.py path/to/images --append
+
+# Exclude files matching glob patterns
+python restoretags.py --backup backup.json --exclude "*thumb*"
+
+# Recursively scan subdirectories
+python restoretags.py folder -r
+
+# Via PATH
+restoretags
+restoretags --backup mybackup.json
+```
+
+By default, tags are **overwritten** on the image. Use `--append` / `-a` to merge with any existing tags.

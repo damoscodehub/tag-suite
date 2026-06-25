@@ -35,8 +35,11 @@ def build_xmp(tags: set[str]) -> bytes:
 
 def _parse_xmp_xml(xml_data: str) -> set[str]:
     root = ET.fromstring(xml_data)
-    ns = {'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'}
-    return {li.text.strip() for li in root.findall('.//rdf:li', ns) if li.text}
+    ns = {
+        'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+        'dc': 'http://purl.org/dc/elements/1.1/',
+    }
+    return {li.text.strip() for li in root.findall('.//dc:subject//rdf:li', ns) if li.text}
 
 
 # ─── JPEG ──────────────────────────────────────────────────────────────

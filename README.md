@@ -185,3 +185,30 @@ restoretags --backup mybackup.json
 ```
 
 By default, tags are **overwritten** on the image. Use `--append` / `-a` to merge with any existing tags.
+
+### Scrubbing Suspicious Tags
+
+Detects and removes non-tag data (coordinates, serialized floats, Lightroom parameters) that may have been mistakenly written into the keyword field by buggy metadata parsers.
+
+```bash
+# Dry-run: scan and show suspicious tags without modifying anything
+python scrubtags.py
+python scrubtags.py path/to/images
+python scrubtags.py image.jpg
+
+# Actually remove the suspicious tags
+python scrubtags.py image.jpg --clean
+python scrubtags.py path/to/images --clean
+
+# Recursively scan subdirectories
+python scrubtags.py folder --clean -r
+
+# Exclude files matching glob patterns
+python scrubtags.py path --clean --exclude "*thumb*,*backup*"
+
+# Via PATH
+scrubtags
+scrubtags image.jpg --clean
+```
+
+Running without `--clean` is a safe dry-run — it prints which tags it would remove, along with a full list of all unique suspicious patterns found. Pass `--clean` to actually remove them.

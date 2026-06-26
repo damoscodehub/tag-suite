@@ -2,7 +2,7 @@
 
 Command-line tools for AI image tagging, tag copying, and tag removal.
 
-`joytag` uses the [JoyTag](https://github.com/fpgaminer/joytag) vision model to automatically tag images with 5000+ tags. `copytag` copies tags between files, and `untag` removes tags.
+`joytag` uses the [JoyTag](https://github.com/fpgaminer/joytag) vision model to automatically tag images with 5000+ tags. `copytag` copies tags between files, `addtag` adds tags manually, and `untag` removes tags.
 
 **Supported formats:** JPEG (`.jpg`, `.jpeg`), PNG (`.png`), WebP (`.webp`), TIFF (`.tiff`, `.tif`).
 
@@ -24,6 +24,7 @@ All tools accept **`.txt` files as target shortcuts** — each line is treated a
 
 ```bash
 python joytag.py mylist.txt
+python addtag.py targets.txt --tags "1boy,solo"
 python untag.py targets.txt --tags "1boy"
 python scrubtags.py paths.txt --clean
 ```
@@ -129,6 +130,93 @@ copytag source.jpg folder --overwrite
 ```
 
 By default, source tags are **merged** into targets — duplicates are avoided. Use `--overwrite` to replace all tags on targets with only the source's tags.
+
+### Adding Manually Tags
+
+Add specific tags to images without running the AI model.
+
+```bash
+# Add tags to all images in current directory (interactive prompt)
+python addtag.py
+
+# Add tags to a specific folder or files
+python addtag.py path/to/images --tags "tag1,tag2,tag3"
+python addtag.py img1.jpg img2.png --tags "new_tag,another_tag"
+
+# Overwrite all existing tags (default is append)
+python addtag.py image.jpg --tags "tag1,tag2" --overwrite
+python addtag.py image.png -ow --tags "tag1"
+
+# Read tags from a .txt file (one tag per line)
+python addtag.py folder --tags_file mytags.txt
+
+# Use a .txt file as target list
+python addtag.py targets.txt --tags "tag1,tag2"
+
+# Recursively scan subdirectories
+python addtag.py path/to/images --tags "tag1" -r
+
+# Exclude files matching glob patterns
+python addtag.py path --tags "tag1" --exclude "*thumb*"
+
+# Via PATH
+addtag
+addtag image.jpg --tags "1girl,solo"
+addtag folder --tags_file mytags.txt
+```
+
+If neither `--tags` nor `--tags_file` is provided, you'll be prompted to enter tags interactively (comma-separated).
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tags` | | Comma-separated tags to add |
+| `--tags_file` | | Read tags from a .txt file (one per line) |
+| `--append` | `-a` | Merge tags with existing (default behavior) |
+| `--overwrite` | `-ow` | Replace all existing tags with the new ones |
+| `--recursive` | `-r` | Process subdirectories |
+| `--exclude` | | Glob patterns to exclude (comma-separated) |
+
+### Replacing Tags
+
+Find and replace tags across images. Renames a tag everywhere it appears without affecting other tags.
+
+```bash
+# Replace a single tag in current directory (interactive prompt)
+python replacetag.py
+
+# Replace tags in a specific folder or files
+python replacetag.py path/to/images --tags "old_tag=new_tag"
+python replacetag.py img1.jpg img2.png --tags "bad_tag=good_tag,old=new"
+
+# Remove a tag entirely (replace with nothing)
+python replacetag.py image.jpg --tags "unwanted_tag="
+
+# Read replacements from a .txt file (one old=new per line)
+python replacetag.py folder --tags_file repls.txt
+
+# Use a .txt file as target list
+python replacetag.py targets.txt --tags "old=new"
+
+# Recursively process subdirectories
+python replacetag.py path/to/images --tags "old=new" -r
+
+# Exclude files matching glob patterns
+python replacetag.py path --tags "old=new" --exclude "*thumb*"
+
+# Via PATH
+replacetag
+replacetag image.jpg --tags "1girl=solo"
+replacetag folder --tags_file repls.txt
+```
+
+To remove a tag without a replacement, use `--tags "unwanted_tag="` (equals sign with empty new name). If neither `--tags` nor `--tags_file` is given, you'll be prompted interactively.
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tags` | | Comma-separated `old=new` replacements |
+| `--tags_file` | | Read replacements from a .txt file (one per line) |
+| `--recursive` | `-r` | Process subdirectories |
+| `--exclude` | | Glob patterns to exclude (comma-separated) |
 
 ### Saving Tags (Backup)
 

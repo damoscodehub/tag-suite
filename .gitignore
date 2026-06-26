@@ -5,4 +5,5 @@
 __pycache__
 /validation-arena/posts.jsonl
 models/
-test
+test/
+targets.txt

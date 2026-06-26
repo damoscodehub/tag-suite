@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from image_metadata import read_tags, replace_xmp, build_xmp, IMAGE_EXTENSIONS
+from image_metadata import read_tags, replace_xmp, build_xmp, IMAGE_EXTENSIONS, resolve_targets
 
 
 def collect_files(targets, recursive=False):
@@ -49,7 +49,13 @@ def main():
             positional.append(Path(a))
             i += 1
 
-    targets = positional or [Path.cwd()]
+    if positional:
+        targets = resolve_targets(positional)
+        if not targets:
+            print('No valid targets found.')
+            return
+    else:
+        targets = [Path.cwd()]
     files = collect_files(targets, recursive=recursive)
 
     tags_to_remove = flags.get('tags')

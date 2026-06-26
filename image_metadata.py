@@ -368,6 +368,26 @@ def _write_tiff_tags(path: Path, tags: set[str]):
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.tiff', '.tif'}
 
 
+def resolve_targets(raw_targets: list[Path]) -> list[Path]:
+    """Resolve positional args — normal files/dirs, or .txt files as path lists."""
+    resolved = []
+    for t in raw_targets:
+        if t.suffix.lower() == '.txt':
+            try:
+                lines = [l.strip().strip('"') for l in t.read_text('utf-8').splitlines() if l.strip()]
+                for line in lines:
+                    p = Path(line)
+                    if p.exists():
+                        resolved.append(p)
+                    else:
+                        print(f'Skipping (not found): {p}')
+            except Exception as e:
+                print(f'Error reading {t.name}: {e}')
+        else:
+            resolved.append(t)
+    return resolved
+
+
 def read_tags(path: Path) -> set[str]:
     ext = path.suffix.lower()
     if ext in ('.jpg', '.jpeg'):

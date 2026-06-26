@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from image_metadata import read_tags, write_tags, IMAGE_EXTENSIONS
+from image_metadata import read_tags, write_tags, IMAGE_EXTENSIONS, resolve_targets
 
 
 def collect_targets(args, recursive=False):
@@ -47,7 +47,7 @@ def main():
 
     overwrite = '--overwrite' in flags
     recursive = '--recursive' in flags or '-r' in flags
-    targets = collect_targets(paths[1:], recursive=recursive)
+    targets = collect_targets(resolve_targets(paths[1:]), recursive=recursive)
     if not targets:
         print('No valid target files.')
         return

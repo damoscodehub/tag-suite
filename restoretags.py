@@ -1,7 +1,7 @@
 import json
 import sys
 from pathlib import Path
-from image_metadata import read_tags, write_tags, IMAGE_EXTENSIONS
+from image_metadata import read_tags, write_tags, IMAGE_EXTENSIONS, resolve_targets
 
 
 BACKUP_FILE = Path('tags_backup.json')
@@ -81,7 +81,13 @@ def main():
     if backup is None:
         sys.exit(1)
 
-    targets = positional or [Path.cwd()]
+    if positional:
+        targets = resolve_targets(positional)
+        if not targets:
+            print('No valid targets found.')
+            return
+    else:
+        targets = [Path.cwd()]
     images = collect_images(targets, recursive=recursive, exclude=exclude)
     if not images:
         print('No supported image files found.')

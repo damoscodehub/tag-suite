@@ -1,6 +1,7 @@
 import sys
+import re
 from pathlib import Path
-from image_metadata import read_tags, replace_xmp, build_xmp, IMAGE_EXTENSIONS
+from image_metadata import read_tags, replace_xmp, build_xmp, IMAGE_EXTENSIONS, resolve_targets
 
 
 def is_suspicious(tag):
@@ -16,6 +17,20 @@ def is_suspicious(tag):
         pass
 
     if ',' in s and any(c.isdigit() for c in s):
+        return True
+
+    if ';' in s and any(c.isdigit() for c in s):
+        return True
+
+    tokens = s.split()
+    numeric = 0
+    for t in tokens:
+        try:
+            float(t.rstrip(',;.:'))
+            numeric += 1
+        except ValueError:
+            pass
+    if numeric >= 2:
         return True
 
     return False
@@ -67,7 +82,13 @@ def main():
     recursive = '--recursive' in bool_flags or '-r' in bool_flags
     exclude = flags.get('exclude')
 
-    targets = positional or [Path.cwd()]
+    if positional:
+        targets = resolve_targets(positional)
+        if not targets:
+            print('No valid targets found.')
+            return
+    else:
+        targets = [Path.cwd()]
     images = collect_images(targets, recursive=recursive, exclude=exclude)
     if not images:
         print('No supported image files found.')

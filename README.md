@@ -20,6 +20,14 @@ For convenience, add this repo's folder to your `PATH` to run the commands from 
 
 ## Usage
 
+All tools accept **`.txt` files as target shortcuts** — each line is treated as a file path. This lets you select files in Explorer (Ctrl+Shift+C), paste the paths into a `.txt`, and pass it to any script.
+
+```bash
+python joytag.py mylist.txt
+python untag.py targets.txt --tags "1boy"
+python scrubtags.py paths.txt --clean
+```
+
 ### Tagging Images
 
 ```bash
@@ -127,20 +135,33 @@ By default, source tags are **merged** into targets — duplicates are avoided. 
 Exports tags from images to a JSON backup file. Useful for recovery or batch editing tags externally.
 
 ```bash
-# Save all tags from current directory to tags_backup.json
+# Save all tags from current directory
 python savetags.py
 
-# Save tags from a specific folder
+# Save tags from a specific folder or files
 python savetags.py path/to/images
-
-# Save tags from specific files
 python savetags.py img1.jpg img2.png
 
-# Save to a custom backup path
-python savetags.py --backup mybackup.json
+# Save to a specific path
+python savetags.py -o mybackup.json
 
-# Append to an existing backup file (merge, no duplicates)
-python savetags.py --backup mybackup.json --append
+# Auto-sequence (next available number)
+python savetags.py -s
+python savetags.py -o mybackup.json -s
+
+# Overwrite existing
+python savetags.py -ow
+python savetags.py -o mybackup.json -ow
+
+# Append to existing (merge, no duplicates)
+python savetags.py -a
+python savetags.py -o mybackup.json -a
+
+# Rename the new file
+python savetags.py -rn
+
+# Rename the existing file
+python savetags.py -ro
 
 # Exclude files matching glob patterns
 python savetags.py path/to/images --exclude "*thumb*,*small*"
@@ -150,10 +171,24 @@ python savetags.py folder -r
 
 # Via PATH
 savetags
-savetags path/to/images --backup mybackup.json
+savetags -o mybackup.json -s
 ```
 
-By default, the backup file is **overwritten**. Use `--append` / `-a` to merge with an existing backup.
+If no mode flag is given and the target file exists, you'll be prompted:
+```
+tags_backup.json already exists.
+[N] Auto-sequence  [RN] Rename new  [RO] Rename old  [OW] Overwrite  [A] Append
+Choose:
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--output` | `-o` | Output path (any mode) |
+| `--overwrite` | `-ow` | Replace existing file |
+| `--append` | `-a` | Merge into existing file |
+| `--sequencenew` | `-s` | Pick next available number |
+| `--renamenew` | `-rn` | Choose a new name for the output |
+| `--renameold` | `-ro` | Rename existing file, then write new
 
 ### Restoring Tags
 

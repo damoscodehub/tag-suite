@@ -5,7 +5,7 @@ from PIL import Image
 import torch
 import torchvision.transforms.functional as TVF
 from Models import VisionModel
-from image_metadata import read_tags, write_tags, IMAGE_EXTENSIONS
+from image_metadata import read_tags, write_tags, IMAGE_EXTENSIONS, resolve_targets
 
 CURRENT_DIR = Path(__file__).parent
 sys.path.insert(0, str(CURRENT_DIR))
@@ -80,7 +80,13 @@ def main():
     overwrite = '--overwrite' in flags
     recursive = '--recursive' in flags or '-r' in flags
 
-    targets = args or [TARGET_DIR]
+    if args:
+        targets = resolve_targets(args)
+        if not targets:
+            print('No valid targets found.')
+            return
+    else:
+        targets = [TARGET_DIR]
     images = collect_images(targets, recursive=recursive)
     if not images:
         print('No supported image files found.')

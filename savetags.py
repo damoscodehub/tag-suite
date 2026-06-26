@@ -1,10 +1,11 @@
 import json
 import sys
+import re
 from pathlib import Path
-from image_metadata import read_tags, IMAGE_EXTENSIONS
+from image_metadata import read_tags, IMAGE_EXTENSIONS, resolve_targets
 
 
-BACKUP_FILE = Path('tags_backup.json')
+DEFAULT_BACKUP = Path('tags_backup.json')
 
 
 def collect_images(targets, recursive=False, exclude=None):
@@ -30,6 +31,49 @@ def collect_images(targets, recursive=False, exclude=None):
     return sorted(set(images))
 
 
+def find_sequence_max(base):
+    stem = base.stem
+    suffix = base.suffix
+    parent = base.parent
+    pattern = re.compile(re.escape(stem) + r'\((\d+)\)' + re.escape(suffix) + '$')
+    max_n = 0
+    if base.exists():
+        max_n = 0
+    for p in parent.iterdir():
+        m = pattern.match(p.name)
+        if m:
+            n = int(m.group(1))
+            if n > max_n:
+                max_n = n
+    return max_n
+
+
+def next_sequence_path(base):
+    max_n = find_sequence_max(base)
+    if not base.exists():
+        return base
+    stem = base.stem
+    suffix = base.suffix
+    parent = base.parent
+    return parent / f'{stem}({max_n + 1}){suffix}'
+
+
+def prompt_mode(base):
+    print(f'{base.name} already exists.')
+    while True:
+        choice = input('[N] Auto-sequence  [RN] Rename new  [RO] Rename old  [OW] Overwrite  [A] Append\nChoose: ').strip().lower()
+        if choice in ('n', 'autosequence', 'auto'):
+            return 'sequencenew'
+        elif choice in ('rn', 'renamenew'):
+            return 'renamenew'
+        elif choice in ('ro', 'renameold'):
+            return 'renameold'
+        elif choice in ('ow', 'overwrite'):
+            return 'overwrite'
+        elif choice in ('a', 'append'):
+            return 'append'
+
+
 def main():
     raw = sys.argv[1:]
 
@@ -41,8 +85,8 @@ def main():
         if a == '--exclude' and i + 1 < len(raw):
             flags['exclude'] = [p.strip() for p in raw[i + 1].split(',') if p.strip()]
             i += 2
-        elif a in ('--backup', '-b') and i + 1 < len(raw):
-            flags['backup'] = Path(raw[i + 1])
+        elif a in ('--output', '-o') and i + 1 < len(raw):
+            flags['output'] = Path(raw[i + 1])
             i += 2
         elif a.startswith('-'):
             flags.setdefault('bool', set()).add(a)
@@ -52,19 +96,66 @@ def main():
             i += 1
 
     bool_flags = flags.get('bool', set())
-    append = '--append' in bool_flags or '-a' in bool_flags
+    base = flags.get('output', DEFAULT_BACKUP)
+
+    mode = None
+    if '--overwrite' in bool_flags or '-ow' in bool_flags:
+        mode = 'overwrite'
+    elif '--append' in bool_flags or '-a' in bool_flags:
+        mode = 'append'
+    elif '--sequencenew' in bool_flags or '-s' in bool_flags:
+        mode = 'sequencenew'
+    elif '--renamenew' in bool_flags or '-rn' in bool_flags:
+        mode = 'renamenew'
+    elif '--renameold' in bool_flags or '-ro' in bool_flags:
+        mode = 'renameold'
+
     recursive = '--recursive' in bool_flags or '-r' in bool_flags
     exclude = flags.get('exclude')
-    backup_file = flags.get('backup', BACKUP_FILE)
 
-    targets = positional or [Path.cwd()]
+    if positional:
+        targets = resolve_targets(positional)
+        if not targets:
+            print('No valid targets found.')
+            return
+    else:
+        targets = [Path.cwd()]
     images = collect_images(targets, recursive=recursive, exclude=exclude)
     if not images:
         print('No supported image files found.')
         return
 
+    if mode is None and base.exists():
+        mode = prompt_mode(base)
+
+    if mode is None:
+        backup_file = base
+    elif mode == 'overwrite':
+        backup_file = base
+    elif mode == 'append':
+        backup_file = base
+    elif mode == 'sequencenew':
+        backup_file = next_sequence_path(base)
+    elif mode == 'renamenew':
+        new_name = input(f'New filename (default: {base.name}): ').strip()
+        backup_file = base.with_name(new_name) if new_name else base
+    elif mode == 'renameold':
+        new_name = input(f'Rename existing {base.name} to: ').strip()
+        if not new_name:
+            print('Cannot rename to empty name.')
+            sys.exit(1)
+        old_path = base.with_name(new_name)
+        base.rename(old_path)
+        print(f'Renamed to {old_path.name}')
+        backup_file = base
+    else:
+        backup_file = base
+
+    mode_str = mode or 'default'
+    use_append = mode == 'append'
+
     backup = {}
-    if append and backup_file.exists():
+    if use_append and backup_file.exists():
         try:
             existing = json.loads(backup_file.read_text('utf-8'))
             if isinstance(existing, list):
